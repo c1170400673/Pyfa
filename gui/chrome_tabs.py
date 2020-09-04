@@ -367,7 +367,7 @@ class _TabRenderer:
         width = max(width, self.min_width)
         height = max(height, self.min_height)
 
-        self.disabled = False
+        self._disabled = False
         self.baseText = text
         self.extraText = ''
         self.tab_size = (width, height)
@@ -382,6 +382,18 @@ class _TabRenderer:
         self.tab_img = img
         self.position = (0, 0)  # Not used internally for rendering - helper for tab container
         self.InitTab()
+
+    @property
+    def disabled(self):
+        return self._disabled
+
+    @disabled.setter
+    def disabled(self, value):
+        if value == self._disabled:  # Avoid unnecessary re-rendering
+            return
+
+        self._disabled = value
+        self._Render()
 
     @property
     def text(self):
@@ -401,6 +413,10 @@ class _TabRenderer:
 
         width = max(width, self.min_width)
         height = max(height, self.min_height)
+
+        cur_width, cur_height = self.tab_size
+        if (width == cur_width) and (height == cur_height):
+            return
 
         self.tab_size = (width, height)
         self.InitTab()
@@ -927,7 +943,6 @@ class _TabsContainer(wx.Panel):
         tb_renderer = self.tabs[tab]
         tb_renderer.disabled = disabled
 
-        self.AdjustTabsSize()
         self.Refresh()
 
     def GetSelectedTab(self):
@@ -974,9 +989,6 @@ class _TabsContainer(wx.Panel):
             self.Refresh()
             sel_tab = self.tabs.index(tab)
             self.Parent.SetSelection(sel_tab)
-
-            wx.PostEvent(self.Parent, PageChanged(self.tabs.index(old_sel_tab),
-                                                  self.tabs.index(tab)))
 
             return True
 
